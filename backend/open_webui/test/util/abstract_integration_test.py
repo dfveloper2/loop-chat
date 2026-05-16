@@ -72,7 +72,7 @@ class AbstractPostgresTest(AbstractIntegrationTest):
             env_vars_postgres = {
                 "POSTGRES_USER": "user",
                 "POSTGRES_PASSWORD": "example",
-                "POSTGRES_DB": "openwebui",
+                "POSTGRES_DB": "loopchat",
             }
             cls.docker_client = docker.from_env()
             cls.docker_client.containers.run(
