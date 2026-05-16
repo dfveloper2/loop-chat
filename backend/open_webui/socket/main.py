@@ -72,17 +72,17 @@ if WEBSOCKET_MANAGER == "redis":
         WEBSOCKET_SENTINEL_HOSTS, WEBSOCKET_SENTINEL_PORT
     )
     SESSION_POOL = RedisDict(
-        "open-webui:session_pool",
+        "loop-chat:session_pool",
         redis_url=WEBSOCKET_REDIS_URL,
         redis_sentinels=redis_sentinels,
     )
     USER_POOL = RedisDict(
-        "open-webui:user_pool",
+        "loop-chat:user_pool",
         redis_url=WEBSOCKET_REDIS_URL,
         redis_sentinels=redis_sentinels,
     )
     USAGE_POOL = RedisDict(
-        "open-webui:usage_pool",
+        "loop-chat:usage_pool",
         redis_url=WEBSOCKET_REDIS_URL,
         redis_sentinels=redis_sentinels,
     )
@@ -158,18 +158,19 @@ def get_models_in_use():
 
 @sio.on("usage")
 async def usage(sid, data):
-    model_id = data["model"]
-    # Record the timestamp for the last update
-    current_time = int(time.time())
+    if sid in SESSION_POOL:
+        model_id = data["model"]
+        # Record the timestamp for the last update
+        current_time = int(time.time())
 
-    # Store the new usage data and task
-    USAGE_POOL[model_id] = {
-        **(USAGE_POOL[model_id] if model_id in USAGE_POOL else {}),
-        sid: {"updated_at": current_time},
-    }
+        # Store the new usage data and task
+        USAGE_POOL[model_id] = {
+            **(USAGE_POOL[model_id] if model_id in USAGE_POOL else {}),
+            sid: {"updated_at": current_time},
+        }
 
-    # Broadcast the usage data to all clients
-    await sio.emit("usage", {"models": get_models_in_use()})
+        # Broadcast the usage data to all clients
+        await sio.emit("usage", {"models": get_models_in_use()})
 
 
 @sio.event
@@ -277,7 +278,8 @@ async def channel_events(sid, data):
 
 @sio.on("user-list")
 async def user_list(sid):
-    await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
+    if sid in SESSION_POOL:
+        await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
 
 
 @sio.event
@@ -313,8 +315,8 @@ def get_event_emitter(request_info, update_db=True):
             )
         )
 
-        for session_id in session_ids:
-            await sio.emit(
+        emit_tasks = [
+            sio.emit(
                 "chat-events",
                 {
                     "chat_id": request_info.get("chat_id", None),
@@ -323,6 +325,10 @@ def get_event_emitter(request_info, update_db=True):
                 },
                 to=session_id,
             )
+            for session_id in session_ids
+        ]
+
+        await asyncio.gather(*emit_tasks)
 
         if update_db:
             if "type" in event_data and event_data["type"] == "status":
