@@ -1135,7 +1135,7 @@
 	"The score should be a value between 0.0 (0%) and 1.0 (100%).": "점수는 0.0(0%)에서 1.0(100%) 사이의 값이어야 합니다.",
 	"The temperature of the model. Increasing the temperature will make the model answer more creatively.": "",
 	"Theme": "테마",
-	"Thinking": "",
+	"Thinking": "생각하기",
 	"Thinking...": "생각 중...",
 	"This action cannot be undone. Do you wish to continue?": "이 액션은 되돌릴 수 없습니다. 계속 하시겠습니까?",
 	"This channel was created on {{createdAt}}. This is the very beginning of the {{channelName}} channel.": "이 채널은 {{createdAt}}에 생성되었습니다. 여기가 {{channelName}} 채널의 시작입니다.",
