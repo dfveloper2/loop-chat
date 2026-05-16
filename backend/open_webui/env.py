@@ -135,6 +135,9 @@ VERSION = PACKAGE_DATA["version"]
 # Function to parse each section
 def parse_section(section):
     items = []
+    if section is None:
+        return items
+
     for li in section.find_all("li"):
         # Extract raw HTML string
         raw_html = str(li)
@@ -149,6 +152,16 @@ def parse_section(section):
 
         items.append({"title": title, "content": content, "raw": raw_html})
     return items
+
+
+def find_section_list(section_title):
+    current = section_title.find_next_sibling()
+    while current and current.name not in {"h2", "h3"}:
+        if current.name == "ul":
+            return current
+        current = current.find_next_sibling()
+
+    return None
 
 
 try:
@@ -181,7 +194,7 @@ for version in soup.find_all("h2"):
     while current and current.name != "h2":
         if current.name == "h3":
             section_title = current.get_text().lower()  # e.g., "added", "fixed"
-            section_items = parse_section(current.find_next_sibling("ul"))
+            section_items = parse_section(find_section_list(current))
             version_data[section_title] = section_items
 
         # Move to the next element
